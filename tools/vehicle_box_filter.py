@@ -1,13 +1,14 @@
 import numpy as np
 import cv2
 
-def vehicle_box_filter(img, lower_color: np.ndarray, upper_color: np.ndarray):
+def vehicle_box_filter(img, lower_color: np.ndarray, upper_color: np.ndarray, min_size=(20, 20)):
     """
     Generates bounding boxes for an image based off of objects within a known color range.
 
     :param img: The image to process (BGR format)
     :param lower_color: The lower bound of the color range (BGR format)
     :param upper_color: The upper bound of the color range (BGR format)
+    :param min_size: The minimum size of the bounding boxes (width, height)
     """
 
     # Making sure our color ranges are valid (np.ndarray of shape (3,))
@@ -22,7 +23,7 @@ def vehicle_box_filter(img, lower_color: np.ndarray, upper_color: np.ndarray):
     regions_of_interest = []
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
-        if w > 20 and h > 20: # Filtering out small boxes
+        if w > min_size[0] and h > min_size[1]: # Filtering out small boxes
             regions_of_interest.append(img[y:y+h, x:x+w])
 
     return regions_of_interest
