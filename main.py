@@ -2,29 +2,48 @@ import time
 import sys
 import cv2
 import numpy as np
+import pandas as pd
 import mss
 import easyocr
 from tools.vehicle_box_filter import vehicle_box_filter
+from tools.processing import find_index, remove_leading_numbers
 
 DEBUG = '--debug' in sys.argv
 reader = easyocr.Reader(['en'])
 
-def find_index(roi_result, keyword):
-    for idx, text in enumerate(roi_result):
-        if keyword in text:
-            return idx
-    return -1
 
-def remove_leading_numbers(s):
-    for idx, char in enumerate(s):
-        if not char.isdigit():
-            i = idx
-            break
-    return s[i:].strip()
+def show_interaction_window(vehicle_count):
+    window_width, window_height = 600, 250
+    cv2.namedWindow('Vehicle Logger', cv2.WINDOW_NORMAL)
+    cv2.resizeWindow('Vehicle Logger', window_width, window_height)
+    status_img = np.zeros((window_height, window_width, 3), dtype=np.uint8)
+
+    # Displaying vehicle count
+    cv2.putText(status_img, f"Vehicles Detected: {vehicle_count}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+    # Display instructions
+    cv2.putText(status_img, "Instructions: Slowly scroll through your GV car list. " \
+                            "When all cars have been scanned, press g.", (20, 120),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+    cv2.putText(status_img, "The excel sheet will be placed in the current directory.", (20, 140),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+    cv2.putText(status_img, "Press 'q' to quit", (20, 170),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+    cv2.putText(status_img, "Press 'g' to generate the excel spreadsheet.", (20, 200),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+    
+    cv2.imshow("Vehicle Logger", status_img)
+
 
 def main():
     with mss.mss() as sct:
         monitor = sct.monitors[1] # Capturing the primary monitor
+
+        # Showing the initial interaction window
+        show_interaction_window(0)
+        
+        # The final deduplicated list of vehicles
+        vehicle_dict = {}
 
         while True:
             # Getting an image (ignoring any alpha channel)
@@ -48,6 +67,7 @@ def main():
             
             # Processing the regions of interest into a dictionary structure
             for roi_result in roi_results:
+                # Getting teh make/model and trim
                 make_model = roi_result[0] if len(roi_result) > 0 else None
                 trim = roi_result[1] if "(" in  roi_result[1] and ")" in roi_result[1] else None
 
@@ -89,9 +109,11 @@ def main():
                         "Color": color_string,
                         "Rims": rims_string
                     }
-                    print(vehicle_info)
-                    print("")
-                
+
+                    vehicle_dict[(make_model, trim)] = vehicle_info
+
+
+                show_interaction_window(len(vehicle_dict))
 
             # Debugging mode to show the detected ROIs
             if DEBUG:
@@ -103,6 +125,11 @@ def main():
             # Detecting any 'q' presses
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+            elif cv2.waitKey(1) & 0xFF == ord('g'):
+                # Saving the vehicle information to an excel sheet
+                df = pd.DataFrame(vehicle_dict.values())
+                df.to_excel("vehicle_log.xlsx", index=False)
+                print("Excel sheet generated: vehicle_log.xlsx")
             time.sleep(0.1)
 
         # Destroying any OpenCV windows during shutdown
