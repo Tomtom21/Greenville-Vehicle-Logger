@@ -1,0 +1,6 @@
+opencv-python
+mss
+numpy
+easyocr
+openpyxl
+pandas
