@@ -15,11 +15,12 @@ def find_index(roi_result, keyword):
             return idx
     return -1
 
-def preprocess_image(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    enhanced = clahe.apply(gray)
-    return enhanced
+def remove_leading_numbers(s):
+    for idx, char in enumerate(s):
+        if not char.isdigit():
+            i = idx
+            break
+    return s[i:].strip()
 
 def main():
     with mss.mss() as sct:
@@ -42,8 +43,7 @@ def main():
             roi_results = []
             for roi in rois:
                 # Using EasyOCR to read text from the ROI
-                preprocessed_image = preprocess_image(roi)
-                result = reader.readtext(preprocessed_image, detail=0)
+                result = reader.readtext(roi, detail=0)
                 roi_results.append(result)
             
             # Processing the regions of interest into a dictionary structure
@@ -61,17 +61,23 @@ def main():
 
                 # Collecting the rest of the vehicle information
                 odometer = roi_result[odometer_index].replace("Odometer:", "").strip() if odometer_index != -1 else None
+                if not odometer:
+                    odometer = "0.0 miles"
+
+                if " miles" not in odometer:
+                    odometer = odometer.replace("miles", " miles")
+
                 rims = roi_result[rims_index:] if rims_index != -1 else None
-                rims_string = " ".join(rims).replace("Rims:", "").strip()
-
-
-                # Might have to manually tell it to remove miles from the start of color
-                # If the odometer is missing, we can assume that there are probably 0 miles on the car
-                
+                rims_string = " ".join(rims).replace("Rims:", "").strip()                
 
                 # Getting the color based on the odometer and rim indexes
                 color = roi_result[odometer_index+1:rims_index] if odometer_index != -1 and rims_index != -1 else None
-                color_string = " ".join(color)
+                color_string = " ".join(color).replace("miles", "").strip()
+
+                # Cleaning the color string for Odometer abnormalities
+                color_string = color_string.replace("miles", "").strip()
+                color_string = remove_leading_numbers(color_string)
+                color_string = color_string.replace("O ", "").strip() if color_string.startswith("O ") else color_string
 
                 # Making sure we got all of the information
                 if None not in (make_model, trim, odometer, rims):
@@ -90,15 +96,14 @@ def main():
             # Debugging mode to show the detected ROIs
             if DEBUG:
                 for i, roi in enumerate(rois):
-                    preprocessed_image = preprocess_image(roi)
                     cv2.namedWindow(f'ROI {i}', cv2.WINDOW_NORMAL)
                     cv2.moveWindow(f'ROI {i}', -900, i * 200)
-                    cv2.imshow(f'ROI {i}', preprocessed_image)
+                    cv2.imshow(f'ROI {i}', roi)
 
             # Detecting any 'q' presses
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            time.sleep(0.3)
+            time.sleep(0.1)
 
         # Destroying any OpenCV windows during shutdown
         cv2.destroyAllWindows()
