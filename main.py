@@ -2,12 +2,10 @@ import time
 import sys
 import cv2
 import numpy as np
-import pandas as pd
 import mss
 import imagehash
 import os
 from tools.vehicle_box_filter import vehicle_box_filter
-from tools.processing import find_index, remove_leading_numbers
 from PIL import Image
 
 DEBUG = '--debug' in sys.argv
@@ -23,7 +21,7 @@ def show_interaction_window():
     # display placeholder
     cv2.putText(status_img, 'Placeholder', (10, 50),
                 cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1)
-    
+
     cv2.imshow("Vehicle Logger", status_img)
 
 def is_similar(new_hash, existing_hash):
@@ -68,8 +66,8 @@ def main():
                 frame = frame[:, :, :3]
 
             # Getting ROIs for vehicles
-            rois = vehicle_box_filter(frame, 
-                                      lower_color=np.array([64, 64, 64]), 
+            rois = vehicle_box_filter(frame,
+                                      lower_color=np.array([64, 64, 64]),
                                       upper_color=np.array([66, 66, 66]),
                                       min_size=(200, 210))
 
@@ -84,14 +82,14 @@ def main():
                                   int(width * 0.35):int(width * 0.7)]
 
                     # compute hash
-                    hash = compute_hash(roi_cropped)
+                    img_hash = compute_hash(roi_cropped)
 
                     # check similarity
-                    if not is_similar(hash, existing_hashes):
+                    if not is_similar(img_hash, existing_hashes):
                         filename = f'{SAVE_FOLDER}/roi_{int(time.time())}_{img_counter}.jpg'
                         cv2.imwrite(filename, roi_cropped)
 
-                        existing_hashes.append(hash)
+                        existing_hashes.append(img_hash)
                         print(f'Saved (new): {filename}')
                         img_counter += 1
                     else:
