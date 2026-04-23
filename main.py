@@ -81,13 +81,16 @@ def main():
                     roi_cropped = roi[int(height * 0.125):int(height * 0.9),
                                   int(width * 0.35):int(width * 0.7)]
 
+                    # resize image
+                    roi_resized = cv2.resize(roi_cropped, (622, 169))
+
                     # compute hash
-                    img_hash = compute_hash(roi_cropped)
+                    img_hash = compute_hash(roi_resized)
 
                     # check similarity
                     if not is_similar(img_hash, existing_hashes):
                         filename = f'{SAVE_FOLDER}/roi_{int(time.time())}_{img_counter}.jpg'
-                        cv2.imwrite(filename, roi_cropped)
+                        cv2.imwrite(filename, roi_resized)
 
                         existing_hashes.append(img_hash)
                         print(f'Saved (new): {filename}')
