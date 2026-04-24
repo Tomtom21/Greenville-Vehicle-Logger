@@ -56,6 +56,13 @@ class InteractionMenu:
                     0.8, 
                     (255, 255, 255), 
                     2)
+        cv2.putText(img,
+                    "NOTE: The number of vehicles detected may read high. This is normal.", 
+                    (20, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (50, 50, 255),
+                    1)
         
         # Button instructions
         cv2.putText(img, "Press 'q' to quit", (20, 170),
