@@ -18,17 +18,24 @@ class InteractionMenu:
         cv2.putText(img,
                     "Instructions: Slowly scroll through your GV car list. " \
                     "When all cars have been scanned, press g.", 
-                    (20, 120),
+                    (20, 20),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.35,
                     (255, 255, 255),
                     1)
         cv2.putText(img,
                     "The excel sheet will be placed in the current directory.", 
-                    (20, 140),
+                    (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.35,
                     (255, 255, 255),
+                    1)
+        cv2.putText(img,
+                    "WARNING: This is not comprehensive. Some vehicles may be missed.", 
+                    (20, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (50, 50, 255),
                     1)
         
         # Button instructions
