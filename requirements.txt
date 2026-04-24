@@ -4,3 +4,6 @@ numpy
 easyocr
 openpyxl
 pandas
+imagehash
+pillow
+tqdm
